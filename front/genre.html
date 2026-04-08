@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рекомендация по жанрам — Movie Recommender</title>
+    <link rel="stylesheet" href="/front/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎬 Movie Recommender</h1>
+            <p class="subtitle">Рекомендация по жанрам</p>
+            <a href="/front/index.html" class="back-link">← На главную</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="form-section">
+            <h2>Выберите жанры</h2>
+            <form id="genre-form">
+                <div class="genres-grid" id="genres-container">
+                    <!-- Жанры будут загружены через JavaScript -->
+                    <div class="loading">Загрузка жанров...</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Сортировка:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="sort_by" value="rating" checked>
+                            По рейтингу
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="sort_by" value="popularity">
+                            По популярности
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="limit">Количество фильмов:</label>
+                    <select id="limit" name="limit">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-large">Найти фильмы</button>
+            </form>
+        </section>
+
+        <section class="results-section" id="results-section" style="display: none;">
+            <h2>Результаты <span id="results-count"></span></h2>
+            <div class="movies-grid" id="movies-container">
+                <!-- Фильмы будут загружены через JavaScript -->
+            </div>
+        </section>
+
+        <section class="loading-section" id="loading-section" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Ищем лучшие фильмы для вас...</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+        </div>
+    </footer>
+
+    <script src="/front/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGenres();
+            document.getElementById('genre-form').addEventListener('submit', handleGenreSearch);
+        });
+    </script>
+</body>
+</html>

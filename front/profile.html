@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рекомендация по профилю — Movie Recommender</title>
+    <link rel="stylesheet" href="/front/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎬 Movie Recommender</h1>
+            <p class="subtitle">Рекомендация по профилю</p>
+            <a href="/front/index.html" class="back-link">← На главную</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="form-section">
+            <h2>Заполните анкету</h2>
+            <p class="form-description">
+                Мы найдём пользователей со схожими вкусами и порекомендуем фильмы, 
+                которые вам с высокой вероятностью понравятся.
+            </p>
+
+            <form id="profile-form">
+                <div class="form-group">
+                    <label>Пол:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="gender" value="true" checked>
+                            Мужской
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="gender" value="false">
+                            Женский
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Возраст:</label>
+                    <input type="number" id="age" name="age" min="10" max="100" value="25" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="occupation">Профессия:</label>
+                    <select id="occupation" name="occupation" required>
+                        <option value="">— Выберите профессию —</option>
+                        <option value="0">Академик / Преподаватель</option>
+                        <option value="1">Художник / Артист</option>
+                        <option value="2">Клерк / Администратор</option>
+                        <option value="3">Студент</option>
+                        <option value="4">Обслуживание клиентов</option>
+                        <option value="5">Врач / Медработник</option>
+                        <option value="6">Руководитель / Менеджер</option>
+                        <option value="7">Фермер</option>
+                        <option value="8">Домохозяин/ка</option>
+                        <option value="9">Журналист</option>
+                        <option value="10">Юрист</option>
+                        <option value="11">Программист</option>
+                        <option value="12">Пенсионер</option>
+                        <option value="13">Маркетолог / Продавец</option>
+                        <option value="14">Учёный</option>
+                        <option value="15">Самозанятый</option>
+                        <option value="16">Техник / Инженер</option>
+                        <option value="17">Рабочий / Ремесленник</option>
+                        <option value="18">Безработный</option>
+                        <option value="19">Писатель</option>
+                        <option value="21">Другое</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="top_n">Количество рекомендаций:</label>
+                    <select id="top_n" name="top_n">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-large">Получить рекомендации</button>
+            </form>
+        </section>
+
+        <section class="results-section" id="results-section" style="display: none;">
+            <h2>Ваши рекомендации <span id="results-count"></span></h2>
+            <div class="movies-grid" id="movies-container">
+                <!-- Фильмы будут загружены через JavaScript -->
+            </div>
+        </section>
+
+        <section class="loading-section" id="loading-section" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Анализируем профили и подбираем фильмы...</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+        </div>
+    </footer>
+
+    <script src="/front/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('profile-form').addEventListener('submit', handleProfileSearch);
+        });
+    </script>
+</body>
+</html>
