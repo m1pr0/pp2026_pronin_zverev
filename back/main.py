@@ -23,6 +23,7 @@ from back.genres import get_all_genres
 # Создаём таблицы при запуске (если не существуют)
 Base.metadata.create_all(bind=engine)
 
+
 app = FastAPI(
     title="Movie Recommender API",
     description="Сервис рекомендаций фильмов на основе жанров и профиля пользователя",
