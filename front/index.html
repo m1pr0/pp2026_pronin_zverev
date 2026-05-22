@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Recommender</title>
-    <link rel="stylesheet" href="/front/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
@@ -33,7 +33,7 @@
                     <li>Сортировка по рейтингу или популярности</li>
                     <li>Настройка количества результатов</li>
                 </ul>
-                <a href="/front/genre.html" class="btn btn-primary">Перейти к выбору</a>
+                <a href="genre.html" class="btn btn-primary">Перейти к выбору</a>
             </div>
 
             <div class="feature-card">
@@ -46,7 +46,7 @@
                     <li>Алгоритм поиска похожих пользователей</li>
                     <li>Прогноз оценки для каждого фильма</li>
                 </ul>
-                <a href="/front/profile.html" class="btn btn-primary">Заполнить анкету</a>
+                <a href="profile.html" class="btn btn-primary">Заполнить анкету</a>
             </div>
         </section>
 
@@ -67,6 +67,37 @@
                 </div>
             </div>
         </section>
+
+        <!-- Форма аутентификации -->
+        <section class="form-section" id="auth-section">
+            <h2>Вход / Регистрация</h2>
+            <!-- Вкладки переключения -->
+            <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button type="button" id="tab-login" class="tab-btn active" onclick="setAuthMode('login')">Вход</button>
+                <button type="button" id="tab-register" class="tab-btn" onclick="setAuthMode('register')">Регистрация</button>
+            </div>
+            
+            <!-- Форма -->
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="username">Имя пользователя:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-large">Войти</button>
+            </form>
+            <div id="auth-message" style="margin-top: 12px; color: #dc3545;"></div>
+        </section>
+
+        <!-- Информация о зарегистрированном пользователе -->
+        <section class="form-section" id="user-info-section" style="display: none;">
+            <h2>Вы вошли как: <span id="current-username"></span></h2>
+            <p><a href="my_profile.html" class="btn btn-primary">Мои оценки</a></p>
+            <p><button onclick="logout()" class="btn btn-primary">Выйти из аккаунта</button></p>
+        </section>
     </main>
 
     <footer>
@@ -74,5 +105,42 @@
             <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
         </div>
     </footer>
+
+    <script src="script.js"></script>
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем, есть ли сохраненный user_id
+            const storedUserId = getStoredUserId();
+            if (storedUserId) {
+                // Показываем информацию о пользователе и скрываем регистрацию
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('user-info-section').style.display = 'block';
+                document.getElementById('current-username').textContent = localStorage.getItem('movie_app_username') || 'Пользователь';
+            } else {
+                // Скрываем информацию о пользователе и показываем регистрацию
+                document.getElementById('auth-section').style.display = 'block';
+                document.getElementById('user-info-section').style.display = 'none';
+            }
+
+            // Обработчик аутентификации
+            document.getElementById('auth-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Определяем режим (вход или регистрация) по тексту кнопки
+                const isRegisterMode = document.getElementById('auth-submit-btn').textContent === 'Зарегистрироваться';
+                
+                if (isRegisterMode) {
+                    registerUser(username, password);
+                } else {
+                    loginUser(username, password);
+                }
+            });
+            
+            // Инициализация режима входа по умолчанию
+            setAuthMode('login');
+        });
+</script>
 </body>
 </html>

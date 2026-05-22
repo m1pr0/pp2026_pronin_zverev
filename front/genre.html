@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Рекомендация по жанрам — Movie Recommender</title>
-    <link rel="stylesheet" href="/front/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <h1>🎬 Movie Recommender</h1>
             <p class="subtitle">Рекомендация по жанрам</p>
-            <a href="/front/index.html" class="back-link">← На главную</a>
+            <a href="index.html" class="back-link">← На главную</a>
         </div>
     </header>
 
@@ -71,9 +71,16 @@
         </div>
     </footer>
 
-    <script src="/front/script.js"></script>
+    <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Проверяем, что пользователь зарегистрирован
+            if (!getStoredUserId()) {
+                alert("Зарегистрируйтесь для получения рекомендаций");
+                window.location.href = '/front/index.html';
+                return;
+            }
+            
             loadGenres();
             document.getElementById('genre-form').addEventListener('submit', handleGenreSearch);
         });

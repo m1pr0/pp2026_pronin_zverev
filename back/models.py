@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from back.database import Base
 
@@ -49,3 +49,21 @@ class Rating(Base):
 
     def __repr__(self):
         return f"<Rating(user={self.user_id}, movie={self.movie_id}, rating={self.user_rating})>"
+
+# Новые модели для зарегистрированных пользователей и их оценок
+class RegisteredUser(Base):
+    __tablename__ = "registered_users"
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    hashed_password = Column(String)
+
+class UserRating(Base):
+    __tablename__ = "user_ratings"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("registered_users.id"))
+    movie_id = Column(Integer)
+    rating = Column(Integer)
+    created_at = Column(DateTime, default="now()")
+

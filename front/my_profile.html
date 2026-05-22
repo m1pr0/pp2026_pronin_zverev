@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои оценки — Movie Recommender</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+        <div class="container">
+            <h1>🎬 Movie Recommender</h1>
+            <p class="subtitle">Мои оценки</p>
+            <a href="genre.html" class="back-link">← Назад к рекомендациям</a>
+            <p><button onclick="logout()" class="btn btn-primary" style="margin-top: 10px;">Выйти из аккаунта</button></p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="form-section">
+            <h2>Мои оценки</h2>
+            <ul id="my-ratings-list"></ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+        </div>
+    </footer>
+
+<script src="script.js"></script>
+</body>
+</html>

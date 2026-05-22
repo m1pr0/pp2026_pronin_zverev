@@ -470,6 +470,94 @@ footer p {
     font-size: 0.9rem;
 }
 
+/* ===== СТИЛИ ДЛЯ КНОПОК РЕЙТИНГА ===== */
+.rating-buttons {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.rate-btn {
+    padding: 4px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.rate-btn:hover {
+    background: #007bff;
+    color: white;
+}
+
+.rate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== СТИЛИ ДЛЯ ВКЛАДОК АУТЕНТИФИКАЦИИ ===== */
+.tab-btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+    flex: 1;
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.tab-btn:hover:not(.active) {
+    background: var(--bg-form);
+}
+
+/* ===== СТИЛИ ДЛЯ СООБЩЕНИЙ ОШИБОК АУТЕНТИФИКАЦИИ ===== */
+#auth-message {
+    padding: 10px;
+    border-radius: var(--radius);
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* ===== СТИЛИ ДЛЯ СПИСКА ОЦЕНОК ===== */
+#my-ratings-list {
+    list-style: none;
+    padding: 0;
+}
+
+#my-ratings-list li {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.rating-stars {
+    color: #ffc107;
+}
+
+/* ===== СТИЛИ ДЛЯ КНОПКИ НАЗАД ===== */
+.back-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+}
+
+.back-link:hover {
+    color: var(--primary-color);
+    background: rgba(229, 9, 20, 0.2);
+}
+
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
     header h1 {

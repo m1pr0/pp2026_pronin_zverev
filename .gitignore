@@ -1,32 +1,59 @@
-# Виртуальное окружение
-venvpp/
-venv/
-env/
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
 
-# База данных
+# Virtual Environments
+venv/
+env/
+venvpp/
+ENV/
+*.venv/
+
+# Database & Secrets
+.env
+.env.*
+!.env.example
 *.db
 *.sqlite3
+*.sql
+db_credentials.txt
 
-# Переменные окружения (пароли!)
-.env
-
-# IDE
-.idea/
+# IDE & Editors
 .vscode/
+.idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
 
-# OS
+# OS Files
 .DS_Store
 Thumbs.db
+desktop.ini
+*.lnk
 
-# Временные файлы
-*.tmp
+# Logs & Temp
 *.log
+logs/
+tmp/
+temp/
+
+# Frontend/JS
+node_modules/
+.npmrc
+package-lock.json
+
+# Project Specific
+# НЕ игнорировать dataset/, back/, front/, requirements.txt, setup_database.py, README.md, HOW_TO_RUN.txt
+# Игнорировать только временные артефакты сборки или локальные конфиги подключения

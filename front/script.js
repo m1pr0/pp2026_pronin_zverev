@@ -1,5 +1,134 @@
 // ===== КОНФИГУРАЦИЯ =====
-const API_BASE_URL = ""; // Относительный путь (тот же хост)
+const API_BASE_URL = 'http://127.0.0.1:8000'; // Базовый URL API
+
+// ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЕМ =====
+function registerUser(username, password) {
+    fetch(`${API_BASE_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка регистрации');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Сохраняем user_id и username
+        localStorage.setItem('movie_app_user_id', data.user_id);
+        localStorage.setItem('movie_app_username', username);
+        
+        // Обновляем интерфейс
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('user-info-section').style.display = 'block';
+        document.getElementById('current-username').textContent = username;
+    })
+    .catch(error => {
+        console.error('Ошибка регистрации:', error);
+        document.getElementById('auth-message').textContent = 'Ошибка регистрации: ' + error.message;
+    });
+}
+
+function getStoredUserId() {
+    return parseInt(localStorage.getItem('movie_app_user_id')) || null;
+}
+
+// ===== ЗАГРУЗКА ОЦЕНОК ПОЛЬЗОВАТЕЛЯ =====
+function loadUserRatings() {
+    const userId = getStoredUserId();
+    if (!userId) {
+        alert("Сначала зарегистрируйтесь");
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    const list = document.getElementById('my-ratings-list');
+    list.innerHTML = '<li>Загрузка...</li>';
+    
+    fetch(`${API_BASE_URL}/api/users/${userId}/ratings`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки оценок');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                list.innerHTML = '<li>Вы еще не оценивали фильмы</li>';
+            } else {
+                list.innerHTML = '';
+                data.forEach(rating => {
+                    const item = document.createElement('li');
+                    
+                    // Формируем звёздочки для рейтинга
+                    let stars = '';
+                    for (let i = 1; i <= 5; i++) {
+                        stars += i <= rating.rating ? '★' : '☆';
+                    }
+                    
+                    // Форматируем дату
+                    const dateStr = rating.created_at ? 
+                        new Date(rating.created_at).toLocaleDateString('ru-RU') : 
+                        'Неизвестно';
+                    
+                    item.innerHTML = `
+                        <strong>${rating.title}</strong><br>
+                        Оценка: <span class="rating-stars">${stars}</span> (${rating.rating}/5)<br>
+                        <small>Дата: ${dateStr}</small>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки оценок:', error);
+            list.innerHTML = '<li>Ошибка загрузки оценок</li>';
+        });
+}
+
+// ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ОЦЕНКАМИ =====
+function submitRating(movieId, rating) {
+    const userId = getStoredUserId();
+    if (!userId) {
+        alert('Сначала зарегистрируйтесь');
+        return;
+    }
+    
+    fetch(`${API_BASE_URL}/api/rate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            movie_id: movieId,
+            rating: rating
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка сохранения оценки');
+        }
+        return response.json();
+    })
+    .then(() => {
+        // Показываем уведомление
+        alert('✓ Оценка сохранена');
+        
+        // Отключаем кнопки рейтинга для этого фильма
+        const ratingButtons = document.querySelectorAll(`.rating-buttons[data-movie-id="${movieId}"] .rate-btn`);
+        ratingButtons.forEach(btn => {
+            btn.disabled = true;
+        });
+    })
+    .catch(error => {
+        console.error('Ошибка сохранения оценки:', error);
+        alert('Ошибка сохранения оценки: ' + error.message);
+    });
+}
 
 // ===== ЗАГРУЗКА ЖАНРОВ (для страницы genre.html) =====
 async function loadGenres() {
@@ -197,16 +326,37 @@ function displayMovies(movies, type) {
             `;
         }
 
+        // Добавляем блок с кнопками рейтинга
+        const ratingButtonsHtml = `
+            <div class="rating-buttons" data-movie-id="${movie.movie_id}">
+                <button class="rate-btn" data-rating="1">1</button>
+                <button class="rate-btn" data-rating="2">2</button>
+                <button class="rate-btn" data-rating="3">3</button>
+                <button class="rate-btn" data-rating="4">4</button>
+                <button class="rate-btn" data-rating="5">5</button>
+            </div>
+        `;
+
         card.innerHTML = `
             ${posterHtml}
             <div class="movie-info">
                 <div class="movie-title" title="${movie.movie_title}">${movie.movie_title}</div>
                 <div class="movie-genres">${genresHtml}</div>
                 ${ratingHtml}
+                ${ratingButtonsHtml}
             </div>
         `;
 
         container.appendChild(card);
+    });
+    
+    // Добавляем обработчик кликов по кнопкам рейтинга
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('rate-btn')) {
+            const movieId = e.target.parentElement.getAttribute('data-movie-id');
+            const rating = parseInt(e.target.getAttribute('data-rating'));
+            submitRating(movieId, rating);
+        }
     });
 }
 
@@ -217,6 +367,106 @@ function showLoading(show) {
         loadingSection.style.display = show ? 'block' : 'none';
     }
 }
+
+// ===== ФУНКЦИЯ ВЫХОДА ИЗ АККАУНТА =====
+function logout() {
+    localStorage.removeItem('movie_app_user_id');
+    window.location.href = 'index.html';
+}
+
+// ===== ФУНКЦИЯ ВХОДА ПОЛЬЗОВАТЕЛЯ =====
+function loginUser(username, password) {
+    fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка входа');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Сохраняем user_id и username
+        localStorage.setItem('movie_app_user_id', data.user_id);
+        localStorage.setItem('movie_app_username', data.username);
+        
+        // Обновляем интерфейс
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('user-info-section').style.display = 'block';
+        document.getElementById('current-username').textContent = data.username;
+    })
+    .catch(error => {
+        console.error('Ошибка входа:', error);
+        document.getElementById('auth-message').textContent = 'Ошибка входа: ' + error.message;
+    });
+}
+
+// ===== ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ =====
+function registerUser(username, password) {
+    fetch(`${API_BASE_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка регистрации');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Сохраняем user_id и username
+        localStorage.setItem('movie_app_user_id', data.user_id);
+        localStorage.setItem('movie_app_username', username);
+        
+        // Обновляем интерфейс
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('user-info-section').style.display = 'block';
+        document.getElementById('current-username').textContent = username;
+    })
+    .catch(error => {
+        console.error('Ошибка регистрации:', error);
+        document.getElementById('auth-message').textContent = 'Ошибка регистрации: ' + error.message;
+    });
+}
+
+// ===== ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ АУТЕНТИФИКАЦИИ =====
+function setAuthMode(mode) {
+    const loginTab = document.getElementById('tab-login');
+    const registerTab = document.getElementById('tab-register');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const messageDiv = document.getElementById('auth-message');
+    
+    if (mode === 'login') {
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+        submitBtn.textContent = 'Войти';
+        messageDiv.textContent = '';
+    } else {
+        registerTab.classList.add('active');
+        loginTab.classList.remove('active');
+        submitBtn.textContent = 'Зарегистрироваться';
+        messageDiv.textContent = '';
+    }
+    
+    // Сбрасываем форму
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ СТРАНИЦ =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, на какой странице мы находимся и запускаем соответствующую инициализацию
+    if (window.location.pathname.includes('my_profile.html')) {
+        loadUserRatings();
+    }
+});
 
 function showResults() {
     const resultsSection = document.getElementById('results-section');
