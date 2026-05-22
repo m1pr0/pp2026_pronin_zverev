@@ -12,22 +12,25 @@ import os
 import sys
 import traceback
 
-# ========== КОНФИГУРАЦИЯ ==========
+# ========== КОНФИГУРАЦИЯ (с поддержкой Docker) ==========
+import os
+
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'movie_recommender',      # системная БД для первого подключения
-    'user': 'postgres',
-    'password': 'mipro777'               # ПОПРОБУЙТЕ ПУСТОЙ ПАРОЛЬ СНАЧАЛА
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'port': int(os.environ.get('DB_PORT', 5432)),
+    'database': os.environ.get('DB_SYSTEM', 'postgres'),      # системная БД для первого подключения
+    'user': os.environ.get('DB_USER', 'postgres'),
+    'password': os.environ.get('DB_PASSWORD', 'mipro777')
 }
 
-NEW_DB_NAME = 'movie_recommender'
+NEW_DB_NAME = os.environ.get('DB_NAME', 'movie_recommender')
 
-# Пути к CSV файлам (исправьте под свои)
+# Пути к CSV файлам (относительные к текущему файлу)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATHS = {
-    'movies': r'dataset/movies.csv',
-    'users': r'dataset/users.csv',
-    'ratings': r'dataset/ratings.csv'
+    'movies': os.path.join(BASE_DIR, 'dataset', 'movies.csv'),
+    'users': os.path.join(BASE_DIR, 'dataset', 'users.csv'),
+    'ratings': os.path.join(BASE_DIR, 'dataset', 'ratings.csv')
 }
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
