@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
-from back.database import Base
+from back.database import Base as DatabaseBase
 
 
-class Movie(Base):
+class Movie(DatabaseBase):
     __tablename__ = "movies"
 
     movie_id = Column(Integer, primary_key=True)
@@ -18,7 +18,7 @@ class Movie(Base):
         return f"<Movie(id={self.movie_id}, title='{self.movie_title[:30]}...')>"
 
 
-class User(Base):
+class User(DatabaseBase):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
@@ -35,7 +35,7 @@ class User(Base):
         return f"<User(id={self.user_id}, age={self.bucketized_user_age}, occupation='{self.user_occupation_text}')>"
 
 
-class Rating(Base):
+class Rating(DatabaseBase):
     __tablename__ = "ratings"
 
     user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
@@ -51,14 +51,20 @@ class Rating(Base):
         return f"<Rating(user={self.user_id}, movie={self.movie_id}, rating={self.user_rating})>"
 
 # Новые модели для зарегистрированных пользователей и их оценок
-class RegisteredUser(Base):
+class RegisteredUser(DatabaseBase):
     __tablename__ = "registered_users"
 
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
     hashed_password = Column(String)
+    gender = Column(String, nullable=True, default=None)
+    age = Column(Integer, nullable=True, default=None)
+    profession = Column(String, nullable=True, default=None)
 
-class UserRating(Base):
+    # Связь с оценками пользователя
+    user_ratings = relationship("UserRating", back_populates="registered_user")
+
+class UserRating(DatabaseBase):
     __tablename__ = "user_ratings"
 
     id = Column(Integer, primary_key=True)
@@ -66,4 +72,7 @@ class UserRating(Base):
     movie_id = Column(Integer)
     rating = Column(Integer)
     created_at = Column(DateTime, default="now()")
+
+    # Связь с зарегистрированным пользователем
+    registered_user = relationship("RegisteredUser", back_populates="user_ratings")
 

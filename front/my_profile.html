@@ -3,32 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои оценки — Movie Recommender</title>
-<link rel="stylesheet" href="style.css">
+    <title>Мой профиль — Movie Recommender</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-        <div class="container">
-            <h1>🎬 Movie Recommender</h1>
-            <p class="subtitle">Мои оценки</p>
-            <a href="genre.html" class="back-link">← Назад к рекомендациям</a>
-            <p><button onclick="logout()" class="btn btn-primary" style="margin-top: 10px;">Выйти из аккаунта</button></p>
-        </div>
-    </header>
+    <div class="container">
+        <h1>🎬 Movie Recommender</h1>
+        <p class="subtitle">Мой профиль</p>
+        <a href="genre.html" class="back-link">← Назад к рекомендациям</a>
+        <p><button onclick="logout()" class="btn btn-primary" style="margin-top: 10px;">Выйти из аккаунта</button></p>
+    </div>
+</header>
 
-    <main class="container">
-        <section class="form-section">
-            <h2>Мои оценки</h2>
-            <ul id="my-ratings-list"></ul>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+<main class="container">
+    <!-- Секция анкеты пользователя - отображение данных -->
+    <section class="form-section" id="profile-view-section">
+        <h2>Моя анкета</h2>
+        <div id="profile-display">
+            <p>Пол: <span id="display-gender" style="color: #666;">Не указано</span></p>
+            <p>Возраст: <span id="display-age" style="color: #666;">Не указан</span></p>
+            <p>Профессия: <span id="display-profession" style="color: #666;">Не указана</span></p>
         </div>
-    </footer>
+        <button onclick="editProfile()" class="btn btn-primary">Редактировать анкету</button>
+        <div id="profile-message" style="margin-top: 12px; color: #dc3545;"></div>
+    </section>
+    
+    <!-- Секция анкеты пользователя - редактирование (скрыта по умолчанию) -->
+    <section class="form-section" id="profile-edit-section" style="display: none;">
+        <h2>Редактирование анкеты</h2>
+        <p style="margin-bottom: 16px; color: #666;">Обновите данные для персонализированных рекомендаций.</p>
+        
+        <div class="form-group">
+            <label for="profile-gender">Пол:</label>
+            <select id="profile-gender">
+                <option value="">Не указано</option>
+                <option value="male">Мужчина</option>
+                <option value="female">Женщина</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="profile-age">Возраст:</label>
+            <input type="number" id="profile-age" min="10" max="100" placeholder="Например: 25">
+        </div>
+        
+        <div class="form-group">
+            <label for="profile-profession">Профессия:</label>
+            <select id="profile-profession">
+                <option value="">Выберите профессию</option>
+                <option value="academic/teacher">Академик / Преподаватель</option>
+                <option value="artist">Художник / Артист</option>
+                <option value="clerk/admin">Клерк / Администратор</option>
+                <option value="student">Студент</option>
+                <option value="customer_service">Обслуживание клиентов</option>
+                <option value="medical">Врач / Медработник</option>
+                <option value="executive/manager">Руководитель / Менеджер</option>
+                <option value="farmer">Фермер</option>
+                <option value="homemaker">Домохозяин/ка</option>
+                <option value="journalist">Журналист</option>
+                <option value="lawyer">Юрист</option>
+                <option value="programmer">Программист</option>
+                <option value="retired">Пенсионер</option>
+                <option value="sales/marketing">Маркетолог / Продавец</option>
+                <option value="scientist">Учёный</option>
+                <option value="self-employed">Самозанятый</option>
+                <option value="technician/engineer">Техник / Инженер</option>
+                <option value="worker/craftsman">Рабочий / Ремесленник</option>
+                <option value="unemployed">Безработный</option>
+                <option value="writer">Писатель</option>
+                <option value="other">Другое</option>
+            </select>
+        </div>
+        
+        <button onclick="updateUserProfile()" class="btn btn-primary">Сохранить изменения</button>
+        <button onclick="cancelEditProfile()" class="btn btn-secondary" style="margin-left: 10px;">Отмена</button>
+        <div id="profile-edit-message" style="margin-top: 12px; color: #dc3545;"></div>
+    </section>
+    
+    
+    <!-- Секция оценок -->
+    <section class="form-section">
+        <h2>Мои оценки</h2>
+        <ul id="my-ratings-list"></ul>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+    </div>
+</footer>
 
 <script src="script.js"></script>
+<script>
+    // Функция редактирования анкеты
+    function editProfile() {
+        // Скрываем отображение, показываем форму
+        document.getElementById('profile-view-section').style.display = 'none';
+        document.getElementById('profile-edit-section').style.display = 'block';
+        // Загружаем текущие данные в форму
+        loadUserProfile();
+    }
+    
+    // Функция отмены редактирования
+    function cancelEditProfile() {
+        // Скрываем форму, показываем отображение
+        document.getElementById('profile-edit-section').style.display = 'none';
+        document.getElementById('profile-view-section').style.display = 'block';
+        // Очищаем сообщение об ошибке
+        document.getElementById('profile-edit-message').textContent = '';
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем оценки при загрузке страницы
+        loadUserRatings();
+        // Загружаем анкету для отображения (не загружаем данные, только проверяем авторизацию)
+        const userId = getStoredUserId();
+        if (!userId) {
+            alert("Сначала зарегистрируйтесь");
+            window.location.href = 'index.html';
+            return;
+        }
+    });
+</script>
 </body>
 </html>

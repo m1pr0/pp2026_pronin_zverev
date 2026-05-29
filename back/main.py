@@ -3,10 +3,17 @@ FastAPI приложение для рекомендательной систе�
 Endpoints:
 - GET /api/genres - список доступных жанров
 - GET /api/recommend/genre - рекомендации по жанрам
-- POST /api/recommend/profile - рекомендации по профилю пользователя
+- POST /api/register - регистрация пользователя
+- GET /api/profile/{user_id} - получение профиля
+- PUT /api/profile/{user_id} - обновление профиля
+- POST /api/recommend/auto - auto-рекомендация
+- POST /api/login - вход пользователя
+- POST /api/rate - оценка фильма
+- GET /api/users/{user_id}/ratings - рейтинг пользователя
+- GET /api/health - проверка работоспособности
 """
 
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -16,31 +23,35 @@ import os
 from pydantic import BaseModel
 
 from back.database import get_db, engine
-from back.models import Base, RegisteredUser, UserRating, Movie
+from back.models import DatabaseBase, RegisteredUser, UserRating, Movie
 from back import genre_recommendation_service
 from back import profile_recommendation_service
 from back.genres import get_all_genres
 from back.security import hash_password, verify_password
 
 # Создаём таблицы при запуске (если не существуют)
-Base.metadata.create_all(bind=engine)
+DatabaseBase.metadata.create_all(bind=engine)
 
 # Pydantic-схемы
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    profession: Optional[str] = None
+
+class ProfileUpdateRequest(BaseModel):
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    profession: Optional[str] = None
+
+class AutoRecommendRequest(BaseModel):
+    num_movies: int
 
 class RateRequest(BaseModel):
     user_id: int
     movie_id: int
     rating: int
-
-class ProfileRequest(BaseModel):
-    gender: str
-    age: int
-    profession: str
-    user_id: Optional[int] = None
-    limit: int = 10
 
 
 app = FastAPI(
@@ -88,108 +99,138 @@ def get_genres():
     return {"genres": genres_str}
 
 
-@app.get("/api/recommend/genre")
-def recommend_by_genre(
-    genres: List[str] = Query(..., description="Список названий жанров (например: ['Action', 'Drama'])"),
-    limit: int = Query(20, ge=1, le=100, description="Максимальное количество фильмов"),
-    sort_by: str = Query("rating", regex="^(rating|popularity)$", description="Сортировка: rating или popularity"),
-    db: Session = Depends(get_db)
-):
-    """
-    Возвращает фильмы по выбранным жанрам.
-    
-    Параметры:
-    - **genres**: Список названий жанров (например: ["Action", "Drama"])
-    - **limit**: Максимальное количество фильмов (1-100)
-    - **sort_by**: Сортировка - "rating" (средний рейтинг) или "popularity" (количество оценок)
-    
-    Пример: GET /api/recommend/genre?genres=Action&genres=Drama&limit=10&sort_by=rating
-    """
-    movies = genre_recommendation_service.get_movies_by_genres(
-        db=db,
-        genre_names=genres,
-        limit=limit,
-        sort_by=sort_by
-    )
-    
-    return {
-        "genres_requested": genres,
-        "sort_by": sort_by,
-        "count": len(movies),
-        "movies": movies
-    }
-
-
-@app.post("/api/recommend/profile")
-def recommend_by_profile(
-    request: profile_recommendation_service.ProfileRecommendationRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Возвращает рекомендации на основе профиля пользователя.
-    
-    **Параметры запроса (JSON):**
-    - **gender**: Пол (true = Male, false = Female)
-    - **age**: Возраст (число)
-    - **occupation_label**: Код профессии (0-21)
-    - **top_k**: Количество похожих пользователей (по умолчанию 10)
-    - **top_n**: Количество рекомендаций (по умолчанию 20)
-    
-    **Пример запроса:**
-    ```json
-    {
-        "gender": true,
-        "age": 25,
-        "occupation_label": 14,
-        "top_k": 10,
-        "top_n": 20
-    }
-    ```
-    """
-    movies = profile_recommendation_service.get_recommendations_by_profile(
-        db=db,
-        gender=request.gender,
-        age=request.age,
-        occupation_label=request.occupation_label,
-        top_k=request.top_k,
-        top_n=request.top_n
-    )
-    
-    return {
-        "profile": {
-            "gender": "Male" if request.gender else "Female",
-            "age": request.age,
-            "occupation_label": request.occupation_label
-        },
-        "similar_users_count": request.top_k,
-        "recommendations_count": len(movies),
-        "movies": movies
-    }
-
-
 @app.post("/api/register")
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """Регистрация нового пользователя."""
+    """Регистрация нового пользователя с возможностью указания анкетных данных."""
     # Проверяем, что такой username еще не занят
     existing_user = db.query(RegisteredUser).filter(RegisteredUser.username == request.username).first()
     if existing_user:
-        # Возвращаем 409 Conflict, если пользователь с таким именем уже существует
-        from fastapi import HTTPException
         raise HTTPException(status_code=409, detail="Username already taken")
     
     # Хешируем пароль
     hashed_password = hash_password(request.password)
     
-    # Создаем нового пользователя
+    # Создаем нового пользователя с анкетными данными
     new_user = RegisteredUser(
         username=request.username,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        gender=request.gender,
+        age=request.age,
+        profession=request.profession
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
     return {"user_id": new_user.id}
+
+
+@app.get("/api/profile/{user_id}")
+def get_profile(user_id: int, db: Session = Depends(get_db)):
+    """Получение профиля пользователя по его ID."""
+    user = db.query(RegisteredUser).filter(RegisteredUser.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    return {
+        "gender": user.gender,
+        "age": user.age,
+        "profession": user.profession
+    }
+
+
+@app.put("/api/profile/{user_id}")
+def update_profile(user_id: int, request: ProfileUpdateRequest, db: Session = Depends(get_db)):
+    """Обновление профиля пользователя."""
+    user = db.query(RegisteredUser).filter(RegisteredUser.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    # Обновляем поля, если они переданы
+    if request.gender is not None:
+        user.gender = request.gender
+    if request.age is not None:
+        user.age = request.age
+    if request.profession is not None:
+        user.profession = request.profession
+    
+    db.commit()
+    
+    return {"status": "success", "message": "Профиль обновлен"}
+
+
+@app.post("/api/recommend/auto")
+def recommend_auto(
+    request: AutoRecommendRequest, 
+    db: Session = Depends(get_db),
+    user_id_header: Optional[int] = Header(None, alias="X-User-Id"),
+    user_id_query: Optional[int] = Query(None, alias="user_id")
+):
+    """
+    Универсальная-auto-рекомендация на основе профиля пользователя.
+    
+    Получает user_id из заголовка X-User-Id или query-параметра user_id.
+    Загружает профиль (gender, age, profession) из БД и передает в сервис.
+    
+    Пример запроса: POST /api/recommend/auto?user_id=5
+    Или заголовок: X-User-Id: 5
+    """
+    # Получаем user_id из заголовка или query-параметра
+    user_id = user_id_header or user_id_query
+    
+    # Если user_id не передан, возвращаем базовые рекомендации
+    if user_id is None:
+        # Возвращаем фильмы без фильтрации по оценкам (базовые рекомендации)
+        movies = profile_recommendation_service.get_recommendations_by_profile(
+            db=db,
+            gender=None,
+            age=None,
+            occupation_label=None,
+            top_k=10,
+            top_n=request.num_movies
+        )
+    else:
+        # Получаем профиль пользователя из БД
+        user = db.query(RegisteredUser).filter(RegisteredUser.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        # Конвертируем строковый пол в булево (для совместимости с сервисом)
+        gender_bool = None
+        if user.gender and user.gender.lower() == "male":
+            gender_bool = True
+        elif user.gender and user.gender.lower() == "female":
+            gender_bool = False
+        
+        # Запрашиваем рекомендации
+        movies = profile_recommendation_service.get_recommendations_by_profile(
+            db=db,
+            gender=gender_bool,
+            age=user.age,
+            occupation_label=None,
+            top_k=10,
+            top_n=request.num_movies * 2  # Запрашиваем больше для фильтрации
+        )
+        
+        # Фильтруем уже оцененные фильмы
+        filtered_movies = filter_and_pad_recommendations(movies, db, user_id, request.num_movies)
+        
+        # Оставляем только фильмы с predicted_rating > 2.5
+        movies = [m for m in filtered_movies if m["predicted_rating"] > 2.5]
+    
+    # Если после фильтрации не осталось фильмов
+    if not movies:
+        return {
+            "recommendations_count": 0,
+            "movies": [],
+            "message": "Нет рекомендаций для вас"
+        }
+    
+    return {
+        "recommendations_count": len(movies),
+        "movies": movies
+    }
+
 
 @app.post("/api/login")
 def login(request: RegisterRequest, db: Session = Depends(get_db)):
@@ -203,12 +244,12 @@ def login(request: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Неверный пароль")
     return {"user_id": user.id, "username": user.username}
 
+
 @app.post("/api/rate")
 def rate_movie(request: RateRequest, db: Session = Depends(get_db)):
     """Оценка фильма пользователем."""
     # Проверяем, что рейтинг в пределах от 1 до 5
     if not (1 <= request.rating <= 5):
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
     
     # Ищем существующую оценку
@@ -232,6 +273,7 @@ def rate_movie(request: RateRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok"}
 
+
 @app.get("/api/users/{user_id}/ratings")
 def get_user_ratings(user_id: int, db: Session = Depends(get_db)):
     """Получение рейтингов пользователя по его ID."""
@@ -247,6 +289,7 @@ def get_user_ratings(user_id: int, db: Session = Depends(get_db)):
     } for r in ratings]
     
     return result
+
 
 # Вспомогательная функция для фильтрации рекомендаций
 def filter_and_pad_recommendations(movies, db, user_id, limit):
@@ -280,6 +323,7 @@ def filter_and_pad_recommendations(movies, db, user_id, limit):
         filtered_movies = filtered_movies[:limit]
     
     return filtered_movies
+
 
 @app.get("/api/recommend/genre")
 def recommend_by_genre(
@@ -327,81 +371,6 @@ def recommend_by_genre(
         "movies": movies
     }
 
-@app.post("/api/recommend/profile")
-def recommend_by_profile(
-    request: ProfileRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Возвращает рекомендации на основе профиля пользователя.
-    
-    **Параметры запроса (JSON):**
-    - **gender**: Пол ("Male" или "Female")
-    - **age**: Возраст (число)
-    - **profession**: Код профессии
-    - **user_id**: Идентификатор пользователя (для фильтрации уже оцененных фильмов), необязательный
-    - **limit**: Количество рекомендаций (по умолчанию 10)
-    
-    **Пример запроса:**
-    ```json
-    {
-        "gender": "Male",
-        "age": 25,
-        "profession": "Engineer",
-        "user_id": 1,
-        "limit": 10
-    }
-    ```
-    """
-    
-    # Конвертируем строку пола в булево значение
-    gender_bool = request.gender.lower() == "male"
-    
-    # Получаем код профессии
-    from back.genres import get_all_genres
-    genres = get_all_genres()
-    profession_code = None
-    for k, v in genres.items():
-        if v == request.profession:
-            profession_code = k
-            break
-    
-    if profession_code is None:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Invalid profession")
-    
-    # Запрашиваем рекомендации от сервиса
-    movies = profile_recommendation_service.get_recommendations_by_profile(
-        db=db,
-        gender=gender_bool,
-        age=request.age,
-        occupation_label=profession_code,
-        top_k=10,
-        top_n=request.limit
-    )
-    
-    # Если задан user_id, фильтруем результаты
-    if request.user_id is not None:
-        # Фильтруем уже оцененные фильмы и паддинг до нужного размера
-        movies = filter_and_pad_recommendations(movies, db, request.user_id, request.limit)
-        
-        # Если после фильтрации не осталось фильмов
-        if not movies:
-            return {
-                "movies": [],
-                "message": "Вы оценили все доступные фильмы"
-            }
-    
-    return {
-        "profile": {
-            "gender": "Male" if gender_bool else "Female",
-            "age": request.age,
-            "profession": request.profession
-        },
-        "similar_users_count": 10,
-        "recommendations_count": len(movies),
-        "movies": movies
-    }
 
 @app.get("/api/health")
 def health_check():

@@ -46,7 +46,7 @@
                     <li>Алгоритм поиска похожих пользователей</li>
                     <li>Прогноз оценки для каждого фильма</li>
                 </ul>
-                <a href="profile.html" class="btn btn-primary">Заполнить анкету</a>
+                <a href="#" id="profile-rec-btn" class="btn btn-primary">Рекомендовать по профилю</a>
             </div>
         </section>
 
@@ -89,6 +89,51 @@
                 </div>
                 <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-large">Войти</button>
             </form>
+            
+            <!-- Дополнительные поля анкеты для регистрации -->
+            <div id="registration-profile-fields" style="display: none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #666;">Анкета (для персонализированных рекомендаций)</h3>
+                <div class="form-group">
+                    <label for="reg-gender">Пол:</label>
+                    <select id="reg-gender" name="gender">
+                        <option value="">Не указано</option>
+                        <option value="male">Мужчина</option>
+                        <option value="female">Женщина</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reg-age">Возраст:</label>
+                    <input type="number" id="reg-age" name="age" min="10" max="100" placeholder="Например: 25">
+                </div>
+                <div class="form-group">
+                    <label for="reg-profession">Профессия:</label>
+                    <select id="reg-profession" name="profession">
+                        <option value="">Выберите профессию</option>
+                        <option value="academic/teacher">Академик / Преподаватель</option>
+                        <option value="artist">Художник / Артист</option>
+                        <option value="clerk/admin">Клерк / Администратор</option>
+                        <option value="student">Студент</option>
+                        <option value="customer_service">Обслуживание клиентов</option>
+                        <option value="medical">Врач / Медработник</option>
+                        <option value="executive/manager">Руководитель / Менеджер</option>
+                        <option value="farmer">Фермер</option>
+                        <option value="homemaker">Домохозяин/ка</option>
+                        <option value="journalist">Журналист</option>
+                        <option value="lawyer">Юрист</option>
+                        <option value="programmer">Программист</option>
+                        <option value="retired">Пенсионер</option>
+                        <option value="sales/marketing">Маркетолог / Продавец</option>
+                        <option value="scientist">Учёный</option>
+                        <option value="self-employed">Самозанятый</option>
+                        <option value="technician/engineer">Техник / Инженер</option>
+                        <option value="worker/craftsman">Рабочий / Ремесленник</option>
+                        <option value="unemployed">Безработный</option>
+                        <option value="writer">Писатель</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+            </div>
+            
             <div id="auth-message" style="margin-top: 12px; color: #dc3545;"></div>
         </section>
 
@@ -128,8 +173,11 @@
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 
+                console.log('Form submitted:', username);
+                
                 // Определяем режим (вход или регистрация) по тексту кнопки
                 const isRegisterMode = document.getElementById('auth-submit-btn').textContent === 'Зарегистрироваться';
+                console.log('Mode:', isRegisterMode ? 'register' : 'login');
                 
                 if (isRegisterMode) {
                     registerUser(username, password);

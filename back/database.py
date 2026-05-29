@@ -35,3 +35,6 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+# Создание таблиц при импорте модуля
+# Base.metadata.create_all(bind=engine) - отключено для избежания дублирования (см. main.py)

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рекомендация по профилю — Movie Recommender</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎬 Movie Recommender</h1>
+            <p class="subtitle">Рекомендация по профилю</p>
+            <a href="index.html" class="back-link">← На главную</a>
+            <p><button onclick="logout()" class="btn btn-primary" style="margin-top: 10px;">Выйти из аккаунта</button></p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="form-section">
+            <h2>Получить рекомендации</h2>
+            <p style="margin-bottom: 16px; color: #666;">На основе вашего профиля мы подберём подходящие фильмы.</p>
+            
+            <form id="recommend-form">
+                <div class="form-group">
+                    <label for="num_movies">Количество фильмов:</label>
+                    <select id="num_movies" name="num_movies">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-large">Найти фильмы</button>
+            </form>
+            
+            <div id="recommend-message" style="margin-top: 12px; color: #dc3545;"></div>
+        </section>
+
+        <section class="results-section" id="results-section" style="display: none;">
+            <h2>Рекомендации <span id="results-count"></span></h2>
+            <div class="movies-grid" id="movies-container">
+                <!-- Фильмы будут загружены через JavaScript -->
+            </div>
+        </section>
+
+        <section class="loading-section" id="loading-section" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Ищем лучшие фильмы для вас...</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Movie Recommender © 2026 — Рекомендации на основе данных MovieLens</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // ===== ПРОВЕРКА ДОСТУПА К РЕКОМЕНДАЦИЯМ =====
+        (function checkRecommendationAccess() {
+            const userId = localStorage.getItem('movie_app_user_id');
+            const username = localStorage.getItem('movie_app_username');
+            
+            console.log('Check access - userId:', userId, 'username:', username);
+            
+            function showAccessError(message) {
+                alert(message || 'Войдите или зарегистрируйтесь и заполните анкету');
+                window.location.href = 'index.html';
+            }
+            
+            // Проверяем авторизацию
+            if (!userId || !username) {
+                showAccessError('Войдите или зарегистрируйтесь и заполните анкету');
+                return;
+            }
+            
+            // Проверяем анкету
+            fetch(`${API_BASE_URL}/api/profile/${userId}`)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Ошибка загрузки профиля');
+                    }
+                    return res.json();
+                })
+                .then(profile => {
+                    console.log('Profile data:', profile);
+                    // Проверяем, заполнено ли хотя бы одно поле
+                    if (!profile.gender && !profile.age && !profile.profession) {
+                        showAccessError('Заполните анкету для получения персонализированных рекомендаций');
+                    }
+                })
+                .catch(err => {
+                    console.error('Profile check error:', err);
+                    showAccessError('Ошибка проверки профиля');
+                });
+        })();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('recommend-form').addEventListener('submit', handleRecommendSearch);
+        });
+        
+        // Обработка поиска рекомендаций
+        async function handleRecommendSearch(event) {
+            event.preventDefault();
+            
+            const userId = localStorage.getItem('movie_app_user_id');
+            if (!userId) {
+                alert("Войдите или зарегистрируйтесь и заполните анкету");
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            const numMovies = parseInt(document.getElementById('num_movies').value);
+            
+            if (!numMovies || numMovies < 1) {
+                alert("Укажите количество фильмов (от 1)");
+                return;
+            }
+            
+            // Показываем загрузку
+            showLoading(true);
+            hideResults();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/recommend/auto`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ num_movies: numMovies })
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 404) {
+                        alert("Войдите или зарегистрируйтесь и заполните анкету");
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    throw new Error('Ошибка получения рекомендаций');
+                }
+                
+                const data = await response.json();
+                
+                if (data.movies.length === 0) {
+                    showNoResults();
+                } else {
+                    displayMovies(data.movies, 'profile');
+                    document.getElementById('results-count').textContent = 
+                        `(${data.recommendations_count} рекомендаций)`;
+                    showResults();
+                }
+            } catch (error) {
+                showError(error.message);
+                console.error('Ошибка поиска рекомендаций:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
